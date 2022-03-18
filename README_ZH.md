@@ -30,7 +30,7 @@ chmod +x container-escape-check.sh
 ./container-escape-check.sh
 ```
 
-![](https://cdn.jsdelivr.net/gh/teamssix/BlogImages/imgs/202203181518954.png)
+![](./img.png)
 
 # 注意：
 
