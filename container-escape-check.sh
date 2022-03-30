@@ -3,7 +3,7 @@
 
 echo -e ""
 echo -e "\033[34m=============================================================\033[0m"
-echo -e "\033[34m                Containers Escape Check v0.1                 \033[0m"
+echo -e "\033[34m                Containers Escape Check v0.2                 \033[0m"
 echo -e "\033[34m-------------------------------------------------------------\033[0m"
 echo -e "\033[34m                     Author:  TeamsSix                       \033[0m"
 echo -e "\033[34m                     Twitter: TeamsSix                       \033[0m"
@@ -23,6 +23,12 @@ echo -e ""
 # 6. CVE-2016-5195 DirtyCow
 # 7. CVE-2020-14386 
 # 8. CVE-2022-0847 DirtyPipe
+# 9. CVE-2017-1000112
+# 10. CVE-2021-22555
+# 11. Mount Host Var Log
+# 12. CAP_DAC_READ_SEARCH
+# 13. CAP_SYS_ADMIN
+# 14. CAP_SYS_PTRACE
 
 
 # 0. Check The Current Environment
@@ -100,13 +106,14 @@ CheckRootDirectoryMount(){
 
 # 5. Check Docker Remote API
 CheckDockerRemoteAPI(){
-
-    IP=`hostname -i | awk -F. '{print $1 "." $2 "." $3 ".1"}' ` && timeout 3 bash -c "echo -e >/dev/tcp/$IP/2375" > /dev/null 2>&1 && DockerRemoteAPIIsEnabled=1 || DockerRemoteAPIIsEnabled=0
-
-    if [ $DockerRemoteAPIIsEnabled -eq 1 ];then
-        echo -e "\033[92m[+] The Docker Remote API for the current container is enabled.\033[0m"
-        VulnerabilityExists=1
-    fi
+    for PORT in "2375" "2376"
+    do 
+        IP=`hostname -i | awk -F. '{print $1 "." $2 "." $3 ".1"}' ` && timeout 3 bash -c "echo -e >/dev/tcp/$IP/$PORT" > /dev/null 2>&1 && DockerRemoteAPIIsEnabled=1 || DockerRemoteAPIIsEnabled=0
+        if [ $DockerRemoteAPIIsEnabled -eq 1 ];then
+            echo -e "\033[92m[+] The Docker Remote API for the current container is enabled.\033[0m"
+            VulnerabilityExists=1
+        fi
+    done
 }
 
 
@@ -119,12 +126,6 @@ MinorRevision=`echo -e $LinuxKernelVersion | awk -F '.' '{print $3}'`
 # 6. Check CVE-2016-5195 DirtyCow
 # 2.6.22 <= ver <= 4.8.3
 CheckCVE_2016_5195DirtyCow(){
-    # ver = 3
-    if [[ "$KernelVersion" -eq 3 ]];then
-        echo -e "\033[92m[+] The current container has the CVE-2016-5195 DirtyCow vulnerability.\033[0m"
-        VulnerabilityExists=1
-    fi
-
     # 2.6.22 <= ver <= 2.6.xx
     if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -eq 6 && "$MinorRevision" -ge 22 ]];then
         echo -e "\033[92m[+] The current container has the CVE-2016-5195 DirtyCow vulnerability.\033[0m"
@@ -133,6 +134,12 @@ CheckCVE_2016_5195DirtyCow(){
 
     # 2.7 <= ver <= 2.x
     if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -ge 7 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2016-5195 DirtyCow vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+
+    # ver = 3
+    if [[ "$KernelVersion" -eq 3 ]];then
         echo -e "\033[92m[+] The current container has the CVE-2016-5195 DirtyCow vulnerability.\033[0m"
         VulnerabilityExists=1
     fi
@@ -214,6 +221,94 @@ CheckCVE_2022_0847(){
 }
 
 
+# 9. CVE-2017-1000112
+# 4.4 <= ver<=4.13
+CheckCVE_2017_1000112(){
+    # 4.4 <= ver <= 4.13
+    if [[ "$KernelVersion" -eq 4 && "$MajorRevision" -ge 4 && "$MajorRevision" -le 13 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2017-1000112 vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+}
+
+
+# 10. CVE-2021-22555
+# 2.6.19 <= ver <= 5.12
+CheckCVE_2021_22555(){
+    # 2.6.19 <= ver <= 2.6.xx
+    if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -eq 6 && "$MinorRevision" -ge 19 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+    # 2.7 <= ver <= 2.x
+    if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -ge 7 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+
+    # ver = 3 or ver = 4
+    if [[ "$KernelVersion" -eq 3 || "$KernelVersion" -eq 4 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+
+    # 5.x <= ver <= 5.12
+    if [[ $KernelVersion -eq 5 && $MajorRevision -le 12 ]];then
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 vulnerability.\033[0m"
+        VulnerabilityExists=1
+    fi
+}
+
+
+# 11. Mount Host Var Log
+CheckVarLogMount(){
+
+    find / -name lastlog 2>/dev/null | wc -l | grep -q 3 && IsVarLogMount=1 || IsVarLogMount=0
+
+    if [ $IsVarLogMount -eq 1 ];then
+        echo -e "\033[93m[!] The current container may have /var/log mounted.\033[0m"
+        VulnerabilityExists=1
+    fi
+}
+
+
+# 12. Check CAP_DAC_READ_SEARCH
+ChekckCAP_DAC_READ_SEARCH(){
+    if command -v capsh >/dev/null 2>&1; then
+        cap_dac_read_searchNum=`capsh --print | grep cap_dac_read_search | wc -l`
+        if [ $cap_dac_read_searchNum -gt 0 ];then
+            echo -e "\033[92m[+] The current container has the CAP_DAC_READ_SEARCH permission.\033[0m"
+            VulnerabilityExists=1
+        fi
+    fi    
+}
+
+
+# 13. Check CAP_SYS_ADMIN
+CheckCAP_SYS_ADMIN(){
+    if command -v capsh >/dev/null 2>&1; then
+        cap_sys_adminNum=`capsh --print | grep cap_sys_admin | wc -l`
+        if [ $cap_sys_adminNum -gt 0 ];then
+            echo -e "\033[92m[+] The current container has the CAP_SYS_ADMIN permission.\033[0m"
+            VulnerabilityExists=1
+        fi
+    fi    
+}
+
+
+# 14. Check CAP_SYS_PTRACE
+CheckCAP_SYS_PTRACE(){
+    if command -v capsh >/dev/null 2>&1; then
+        cap_sys_ptraceNum=`capsh --print | grep cap_sys_ptrace | wc -l`
+        if [ $cap_sys_ptraceNum -gt 0 ];then
+            echo -e "\033[92m[+] The current container has the CAP_SYS_PTRACE permission.\033[0m"
+            VulnerabilityExists=1
+        fi
+    fi    
+}
+
+
+
 main()  
 {  
    # 0. Check the current environment
@@ -242,6 +337,24 @@ main()
 
     # 8. CVE-2022-0847 DirtyPipe
     CheckCVE_2022_0847
+
+    # 9. CVE-2017-1000112
+    CheckCVE_2017_1000112
+
+    # 10. CVE-2021-22555
+    CheckCVE_2021_22555
+
+    # 11. Mount Host Var Log
+    CheckVarLogMount
+
+    # 12. Check CAP_DAC_READ_SEARCH
+    ChekckCAP_DAC_READ_SEARCH
+
+    # 13. Check CAP_SYS_ADMIN
+    CheckCAP_SYS_ADMIN 
+
+    # 14. Check CAP_SYS_PTRACE
+    CheckCAP_SYS_PTRACE
 
     if [ $VulnerabilityExists -eq 0 ];then
         echo -e "\033[33m[!] Check completed, no vulnerability found. \033[0m"
