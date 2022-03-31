@@ -15,9 +15,9 @@
 9. CVE-2017-1000112
 10. CVE-2021-22555
 11. pod 挂载了宿主机 /var/log 目录
-12. 宿主机有 CAP_DAC_READ_SEARCH 权限（需要容器支持 capsh 命令）
-13. 宿主机有 CAP_SYS_ADMIN 权限（需要容器支持 capsh 命令）
-14. 宿主机有 CAP_SYS_PTRACE 权限（需要容器支持 capsh 命令）
+12. 当前容器有 CAP_DAC_READ_SEARCH 权限（需要容器支持 capsh 命令）
+13. 当前容器有 CAP_SYS_ADMIN 权限（需要容器支持 capsh 命令）
+14. 当前容器有 CAP_SYS_PTRACE 权限（需要容器支持 capsh 命令）
 
 # 使用
 
