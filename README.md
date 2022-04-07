@@ -24,7 +24,7 @@ This script is used to detect Docker container escape methods, The following met
 Run this script with one command in the container.
 
 ```
-wget https://raw.githubusercontent.com/teamssix/container-escape-check/main/container-escape-check.sh | bash
+wget https://raw.githubusercontent.com/teamssix/container-escape-check/main/container-escape-check.sh -O- | bash
 ```
 
 Or clone the project to run in the container.
