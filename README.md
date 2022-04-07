@@ -1,3 +1,9 @@
+# Container Escape Check 容器逃逸检测
+
+[![GitHub stars](https://img.shields.io/github/stars/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check) [![GitHub issues](https://img.shields.io/github/issues/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check/issues) [![GitHub release](https://img.shields.io/github/release/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check/releases)  [![img](https://img.shields.io/badge/author-TeamsSix-blueviolet)](https://github.com/teamssix) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/teamssix.svg?style=social&label=Follow%20the%20author)](https://twitter.com/teamssix)
+
+![container-escape-check](https://socialify.git.ci/teamssix/container-escape-check/image?description=1&font=Inter&forks=1&issues=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F49087564&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
+
 [中文](https://github.com/teamssix/container-escape-check/blob/master/README_ZH.md) | EN
 
 # Introduce
@@ -18,8 +24,9 @@ This script is used to detect Docker container escape methods, The following met
 8. CAP_DAC_READ_SEARCH (Requires container to support capsh command)
 8. CAP_SYS_ADMIN (Requires container to support capsh command)
 8. CAP_SYS_PTRACE (Requires container to support capsh command)
+8. CVE-2022-0492
 
-# Usage
+# ✨ Usage
 
 Run this script with one command in the container.
 
@@ -38,13 +45,22 @@ chmod +x container-escape-check.sh
 
 ![](./img.png)
 
-# Notes
+If it feels good, remember to give the project a little star ✨
+
+# ⚠️ Notes
 
 * This script needs to be run inside the docker container.
 * Most of the detection methods here are based on my experience, and there may be false positives or omissions. If you find these problems, please submit an Issue.
 * Some escape methods need to be judged according to the Docker version. I haven't thought of a way to get the Docker version from inside the container, so the script does not support the detection of this method yet.
 
 # Changelog
+
+## v0.3 2022.4.7
+
+* Add CVE-2022-0492
+* If the capsh command does not exist, it will be installed automatically
+* Enhanced privileged mode detection
+* Enhanced /var/log detection
 
 ## v0.2 2022.3.30
 
@@ -56,7 +72,7 @@ chmod +x container-escape-check.sh
 * Add CAP_SYS_PTRACE
 
 ## v0.1 2022.3.18
- 
+
 * Add Privileged Mode
 * Add Mount docker Socket
 * Add Mount host procfs
