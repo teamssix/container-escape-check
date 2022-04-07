@@ -24,7 +24,7 @@
 在 Docker 容器中一键运行：
 
 ```
-wget https://raw.githubusercontent.com/teamssix/container-escape-check/main/container-escape-check.sh | bash
+wget https://raw.githubusercontent.com/teamssix/container-escape-check/main/container-escape-check.sh -O- | bash
 ```
 
 或者克隆项目到容器中运行：
