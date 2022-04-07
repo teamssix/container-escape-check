@@ -1,6 +1,12 @@
+# Container Escape Check 容器逃逸检测
+
+[![GitHub stars](https://img.shields.io/github/stars/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check) [![GitHub issues](https://img.shields.io/github/issues/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check/issues) [![GitHub release](https://img.shields.io/github/release/teamssix/container-escape-check)](https://github.com/teamssix/container-escape-check/releases)  [![img](https://img.shields.io/badge/author-TeamsSix-blueviolet)](https://github.com/teamssix) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/teamssix.svg?style=social&label=Follow%20the%20author)](https://twitter.com/teamssix)
+
+![container-escape-check](https://socialify.git.ci/teamssix/container-escape-check/image?description=1&font=Inter&forks=1&issues=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F49087564&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
+
 中文 | [EN](https://github.com/teamssix/container-escape-check/blob/master/README.md)
 
-# 介绍 
+# 介绍
 
 这个脚本用来检测 Docker 容器中的逃逸方法，目前支持以下几种方法：
 
@@ -18,8 +24,9 @@
 12. 当前容器有 CAP_DAC_READ_SEARCH 权限（需要容器支持 capsh 命令）
 13. 当前容器有 CAP_SYS_ADMIN 权限（需要容器支持 capsh 命令）
 14. 当前容器有 CAP_SYS_PTRACE 权限（需要容器支持 capsh 命令）
+14.  CVE-2022-0492
 
-# 使用
+# ✨ 使用
 
 在 Docker 容器中一键运行：
 
@@ -38,13 +45,22 @@ chmod +x container-escape-check.sh
 
 ![](./img.png)
 
-# 注意：
+如果感觉还不错，记得给项目点个小星星(star) ✨
+
+# ⚠️ 注意：
 
 * 这个脚本需要在 Docker 容器中运行
 * 这里的检测方法大多是基于我自己的经验，可能会存在检测误检或者漏检的情况，如果您发现了这种情况，欢迎提 Issue
 * 由于有的逃逸方法需要根据目标 Docker 的版本去判断，这里我暂时还没想到从容器内部获取 Docker 版本的方法，因此脚本暂时还不支持这块儿的检测。
 
 # 更新日志
+
+## v0.3 2022.4.7
+
+- 添加了 CVE-2022-0492
+- 如果不存在 capsh 命令则会自动安装
+- 增强了特权模式检测
+- 增强了 /var/log 检测
 
 ## v0.2 2022.3.30
 

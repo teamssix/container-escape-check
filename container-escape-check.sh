@@ -3,7 +3,7 @@
 
 echo -e ""
 echo -e "\033[34m=============================================================\033[0m"
-echo -e "\033[34m                Containers Escape Check v0.2                 \033[0m"
+echo -e "\033[34m                Containers Escape Check v0.3                 \033[0m"
 echo -e "\033[34m-------------------------------------------------------------\033[0m"
 echo -e "\033[34m                     Author:  TeamsSix                       \033[0m"
 echo -e "\033[34m                     Twitter: TeamsSix                       \033[0m"
@@ -29,6 +29,74 @@ echo -e ""
 # 12. CAP_DAC_READ_SEARCH
 # 13. CAP_SYS_ADMIN
 # 14. CAP_SYS_PTRACE
+# 15. CVE-2022-0492
+
+
+CheckCommandExists(){
+    $1 >/dev/null 2>&1
+    ret=$?
+    if [ "$ret" -eq 0 ]; then
+        return 1
+    fi
+    return 0
+}
+
+
+# Install command
+InstallCommand(){
+    # install command if not present    
+    CheckCommandExists $1
+    if [ $? -eq 0 ]; then
+        # Check network
+        timeout 3 bash -c "echo -e >/dev/tcp/baidu.com/80" > /dev/null 2>&1 && IsNetWork=1 || IsNetWork=0
+        if [ $IsNetWork -eq 1 ];then
+            echo -e "\033[93m[!] It is detected that the $1 command does not exist in the current system, and the command is being installed.\033[0m"
+
+            CheckCommandExists sudo
+            if [ $? -eq 0 ]; then
+                CheckCommandExists apt-get
+                if [ $? -eq 0 ];then
+                    if [ "$1" = "capsh" ];then
+                        apt-get -y update >/dev/null 2>&1 && apt-get install -y libcap2-bin >/dev/null 2>&1
+                    else
+                        apt-get -y update >/dev/null 2>&1 && apt-get install -y $1 >/dev/null 2>&1
+                    fi
+                fi
+                CheckCommandExists yum
+                if [ $? -eq 0 ];then
+                    if [ "$1" = "capsh" ];then
+                        yum -y update >/dev/null 2>&1 && yum install -y libcap >/dev/null 2>&1
+                    else
+                        yum -y update >/dev/null 2>&1 && yum install -y $1 >/dev/null 2>&1
+                    fi
+                fi
+            else
+                CheckCommandExists apt-get
+                if [ $? -eq 0 ];then
+                    if [ "$1" = "capsh" ];then
+                        sudo apt-get -y update >/dev/null 2>&1 && apt-get install -y libcap2-bin >/dev/null 2>&1
+                    else
+                        sudo apt-get -y update >/dev/null 2>&1 && apt-get install -y $1 >/dev/null 2>&1
+                    fi
+                fi
+                CheckCommandExists yum
+                if [ $? -eq 0 ];then
+                    if [ "$1" = "capsh" ];then
+                        sudo yum -y update >/dev/null 2>&1 && yum install -y libcap >/dev/null 2>&1
+                    else
+                        sudo yum -y update >/dev/null 2>&1 && yum install -y $1 >/dev/null 2>&1
+                    fi
+                fi
+            fi
+            CheckCommandExists $1
+            if [ $? -eq 0 ]; then
+                echo -e "\033[93m[!] $1 command installation failed.\033[0m"
+            else
+                echo -e "\033[93m[!] $1 command installation completed.\033[0m"
+            fi
+        fi
+    fi
+}
 
 
 # 0. Check The Current Environment
@@ -55,6 +123,7 @@ CheckPrivilegedMode(){
         IsPrivilegedMode=0
     else
         cat /proc/self/status | grep -qi "0000003fffffffff" && IsPrivilegedMode=1 || IsPrivilegedMode=0
+        cat /proc/self/status | grep -qi "0000001fffffffff" && IsPrivilegedMode=1 || IsPrivilegedMode=0
     fi
 
     if [ $IsPrivilegedMode -eq 1 ];then
@@ -106,6 +175,7 @@ CheckRootDirectoryMount(){
 
 # 5. Check Docker Remote API
 CheckDockerRemoteAPI(){
+    InstallCommand hostname
     for PORT in "2375" "2376"
     do 
         IP=`hostname -i | awk -F. '{print $1 "." $2 "." $3 ".1"}' ` && timeout 3 bash -c "echo -e >/dev/tcp/$IP/$PORT" > /dev/null 2>&1 && DockerRemoteAPIIsEnabled=1 || DockerRemoteAPIIsEnabled=0
@@ -237,18 +307,18 @@ CheckCVE_2017_1000112(){
 CheckCVE_2021_22555(){
     # 2.6.19 <= ver <= 2.6.xx
     if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -eq 6 && "$MinorRevision" -ge 19 ]];then
-        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 vulnerability.\033[0m"
         VulnerabilityExists=1
     fi
     # 2.7 <= ver <= 2.x
     if [[ "$KernelVersion" -eq 2 && "$MajorRevision" -ge 7 ]];then
-        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 vulnerability.\033[0m"
         VulnerabilityExists=1
     fi
 
     # ver = 3 or ver = 4
     if [[ "$KernelVersion" -eq 3 || "$KernelVersion" -eq 4 ]];then
-        echo -e "\033[92m[+] The current container has the CVE-2021-22555 DirtyCow vulnerability.\033[0m"
+        echo -e "\033[92m[+] The current container has the CVE-2021-22555 vulnerability.\033[0m"
         VulnerabilityExists=1
     fi
 
@@ -262,12 +332,17 @@ CheckCVE_2021_22555(){
 
 # 11. Mount Host Var Log
 CheckVarLogMount(){
-
-    find / -name lastlog 2>/dev/null | wc -l | grep -q 3 && IsVarLogMount=1 || IsVarLogMount=0
-
-    if [ $IsVarLogMount -eq 1 ];then
-        echo -e "\033[93m[!] The current container may have /var/log mounted.\033[0m"
-        VulnerabilityExists=1
+    if [ ! -f "/var/run/secrets/kubernetes.io/serviceaccount/token" ];then
+        IsPodEnv=0
+    else
+        IsPodEnv=1
+    fi
+    if [ $IsPodEnv -eq 1 ];then
+        find / -name lastlog 2>/dev/null | wc -l | grep -q 3 && IsVarLogMount=1 || IsVarLogMount=0
+        if [ $IsVarLogMount -eq 1 ];then
+            echo -e "\033[92m[+] The current container has /var/log mounted.\033[0m"
+            VulnerabilityExists=1
+        fi
     fi
 }
 
@@ -308,6 +383,22 @@ CheckCAP_SYS_PTRACE(){
 }
 
 
+# 15. Check CVE-2022-0492, Code By https://github.com/PaloAltoNetworks/can-ctr-escape-cve-2022-0492/blob/main/can-ctr-escape-cve-2022-0492.sh
+CheckCVE_2022_0492(){
+    # Setup test dir
+    test_dir=/tmp/.cve-2022-0492-test
+    if mkdir -p $test_dir ; then
+        # Test whether escape via user namespaces is possible
+        while read -r subsys
+        do
+            if unshare -UrmC --propagation=unchanged bash -c "mount -t cgroup -o $subsys cgroup $test_dir 2>&1 >/dev/null && test -w $test_dir/release_agent" >/dev/null 2>&1 ; then
+                echo -e "\033[92m[+] The current container has the CVE-2022-0492 vulnerability.\033[0m"
+            fi
+        done <<< $(cat /proc/$$/cgroup | grep -Eo '[0-9]+:[^:]+' | grep -Eo '[^:]+$')
+        umount $test_dir >/dev/null 2>&1 && rm -rf $test_dir >/dev/null 2>&1
+    fi    
+}
+
 
 main()  
 {  
@@ -347,6 +438,8 @@ main()
     # 11. Mount Host Var Log
     CheckVarLogMount
 
+    InstallCommand capsh
+
     # 12. Check CAP_DAC_READ_SEARCH
     ChekckCAP_DAC_READ_SEARCH
 
@@ -355,6 +448,10 @@ main()
 
     # 14. Check CAP_SYS_PTRACE
     CheckCAP_SYS_PTRACE
+
+    # 15. Check CVE-2022-0492
+    CheckCVE_2022_0492
+
 
     if [ $VulnerabilityExists -eq 0 ];then
         echo -e "\033[33m[!] Check completed, no vulnerability found. \033[0m"
